@@ -2,8 +2,8 @@ FROM python:3.12
 
 WORKDIR /app
 COPY . .
-RUN mkdir -p /app/data/raw
-COPY data/raw/test.csv.zip /app/data/raw/
+RUN mkdir -p /app/data/training/raw
+COPY data/training/raw/test.csv.zip /app/data/training/raw/
 
 RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install fastapi uvicorn prometheus-client

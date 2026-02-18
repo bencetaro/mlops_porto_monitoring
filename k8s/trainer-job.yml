@@ -15,8 +15,8 @@ spec:
             - |
               echo "[INIT] Copy training data into PVC..."
               mkdir -p /data
-              cp /app/data/train.csv.zip /data/
-              cp /app/data/test.csv.zip /data/
+              cp /app/data/raw/train.csv.zip /data/
+              cp /app/data/raw/test.csv.zip /data/
               echo "[INIT] Done."
           volumeMounts:
             - name: data-storage

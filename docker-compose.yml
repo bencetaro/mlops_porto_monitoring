@@ -19,7 +19,7 @@ services:
       - "8000:8000"
     environment:
       MODEL_PATH: /output/model.pkl
-      PREP_PATH: /data/processed/preprocessors.pkl
+      PREP_PATH: /data/training/processed/preprocessors.pkl
     volumes:
       - ./data:/data
       - ./output:/output

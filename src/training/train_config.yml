@@ -1,6 +1,6 @@
-model_type: lightgbm # Use lightgbm or random_forest
+model_type: random_forest # Use lightgbm or random_forest
 apply_rusr: true # Random Under Sampling
-apply_skfcv: true # Stratified K-Fold Cross Validation
+apply_skfcv: false # Stratified K-Fold Cross Validation
 apply_mi_score: true # Mutual Information
 apply_fi_score: true # Feature Importance
 apply_cm: true # Confusion Matrix

@@ -15,13 +15,13 @@ def main(input_dir, output_dir):
     assert os.path.exists(train_pth) or os.path.exists(test_pth), "Both 'train.csv.zip' and 'test.csv.zip' must exist in the input directory."
 
     with zipfile.ZipFile(train_pth, 'r') as zip_ref:
-        zip_ref.extractall(input_dir)
+        zip_ref.extractall(output_dir)
     with zipfile.ZipFile(test_pth, 'r') as zip_ref:
-        zip_ref.extractall(input_dir)
+        zip_ref.extractall(output_dir)
 
     logging.info("Loading datasets...")
-    train = pd.read_csv(os.path.join(input_dir, "train.csv"))
-    test = pd.read_csv(os.path.join(input_dir, "test.csv"))
+    train = pd.read_csv(os.path.join(output_dir, "train.csv"))
+    test = pd.read_csv(os.path.join(output_dir, "test.csv"))
     
     # Separate ID
     test_id = test["id"]

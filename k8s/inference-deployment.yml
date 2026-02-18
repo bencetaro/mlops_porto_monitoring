@@ -21,7 +21,7 @@ spec:
             - name: MODEL_PATH
               value: /output/model.pkl
             - name: PREP_PATH
-              value: /data/processed/preprocessors.pkl
+              value: /data/training/processed/preprocessors.pkl
 
           volumeMounts:
             - name: model-storage
