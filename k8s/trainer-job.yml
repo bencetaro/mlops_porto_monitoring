@@ -1,0 +1,46 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: ml-trainer-job
+spec:
+  template:
+    spec:
+      # Copy train/test data from image into PVC
+      initContainers:
+        - name: init-data-copy
+          image: docker.io/saze21/mlops-porto-trainer:exp2
+          command:
+            - /bin/bash
+            - -c
+            - |
+              echo "[INIT] Copy training data into PVC..."
+              mkdir -p /data
+              cp /app/data/train.csv.zip /data/
+              cp /app/data/test.csv.zip /data/
+              echo "[INIT] Done."
+          volumeMounts:
+            - name: data-storage
+              mountPath: /data
+
+      containers:
+        - name: trainer
+          image: docker.io/saze21/mlops-porto-trainer:exp2
+          command: ["bash", "/app/docker/run_train_pipeline.sh"]
+
+          volumeMounts:
+            - name: model-storage
+              mountPath: /output
+            - name: data-storage
+              mountPath: /data
+
+      restartPolicy: Never
+
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: model-pvc
+        - name: data-storage
+          persistentVolumeClaim:
+            claimName: data-pvc
+
+  backoffLimit: 1

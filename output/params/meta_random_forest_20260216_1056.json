@@ -1,0 +1,26 @@
+{
+    "model_name": "random_forest_20260216_1056",
+    "model_type": "random_forest",
+    "apply_rusr": true,
+    "apply_skfcv": true,
+    "apply_mi_score": true,
+    "apply_fi_score": true,
+    "apply_cm": true,
+    "params": {
+        "n_estimators": 100,
+        "min_samples_split": 5,
+        "min_samples_leaf": 1,
+        "max_features": "sqrt",
+        "max_depth": 10,
+        "class_weight": "balanced"
+    },
+    "auc": 0.6252344461446722,
+    "train_rows": 86775,
+    "val_rows": 119043,
+    "num_features": 55,
+    "class_distribution": {
+        "0": 69420,
+        "1": 17355
+    },
+    "train_time": 96.797977
+}

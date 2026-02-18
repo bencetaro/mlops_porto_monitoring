@@ -1,0 +1,8 @@
+pandas
+numpy
+matplotlib
+joblib
+pyyaml
+imblearn
+lightgbm
+scikit-learn==1.7.2

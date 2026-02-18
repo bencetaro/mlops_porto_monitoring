@@ -1,0 +1,20 @@
+{
+  "id": null,
+  "title": "Training Metrics",
+  "panels": [
+    {
+      "type": "graph",
+      "title": "Train Loss",
+      "targets": [{"expr": "train_loss"}],
+      "xaxis": {"mode": "time"},
+      "yaxes": [{"format": "short"}]
+    },
+    {
+      "type": "graph",
+      "title": "Validation Loss",
+      "targets": [{"expr": "val_loss"}],
+      "xaxis": {"mode": "time"},
+      "yaxes": [{"format": "short"}]
+    }
+  ]
+}

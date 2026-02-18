@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: inference-deployment
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: inference
+  template:
+    metadata:
+      labels:
+        app: inference
+    spec:
+      containers:
+        - name: inference
+          image: docker.io/saze21/mlops-porto-inference-api:v1.1
+          ports:
+            - containerPort: 8000
+          env:
+            - name: MODEL_PATH
+              value: /output/model.pkl
+            - name: PREP_PATH
+              value: /data/processed/preprocessors.pkl
+
+          volumeMounts:
+            - name: model-storage
+              mountPath: /output
+            - name: data-storage
+              mountPath: /data
+              readOnly: true
+
+      volumes:
+        - name: model-storage
+          persistentVolumeClaim:
+            claimName: model-pvc
+        - name: data-storage
+          persistentVolumeClaim:
+            claimName: data-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: inference-service
+spec:
+  type: NodePort
+  selector:
+    app: inference
+  ports:
+    - port: 8000 # service port
+      targetPort: 8000 # pod port
+      nodePort: 30080 # port on host (minikube node)

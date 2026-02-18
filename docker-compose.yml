@@ -1,0 +1,61 @@
+services:
+  trainer:
+    container_name: trainer
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.train
+    command: [ "bash", "docker/run_train_pipeline.sh" ]
+    volumes:
+      - ./data:/data
+      - ./output:/output
+    restart: no
+
+  inference-api:
+    container_name: inference-api
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.inference
+    ports:
+      - "8000:8000"
+    environment:
+      MODEL_PATH: /output/model.pkl
+      PREP_PATH: /data/processed/preprocessors.pkl
+    volumes:
+      - ./data:/data
+      - ./output:/output
+    restart: no
+
+  streamlit:
+    container_name: streamlit-client
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.streamlit
+    ports:
+      - "8501:8501"
+    environment:
+      - STREAMLIT_SERVER_ENABLECORS=false
+    volumes:
+      - ./output:/output
+    depends_on:
+      - inference-api
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    volumes:
+      - ./monitoring/grafana:/etc/grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus

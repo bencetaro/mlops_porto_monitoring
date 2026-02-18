@@ -1,0 +1,28 @@
+{
+    "model_name": "lightgbm_20260216_1112",
+    "model_type": "lightgbm",
+    "apply_rusr": true,
+    "apply_skfcv": true,
+    "apply_mi_score": true,
+    "apply_fi_score": true,
+    "apply_cm": true,
+    "params": {
+        "subsample": 0.8,
+        "num_leaves": 15,
+        "n_estimators": 300,
+        "min_child_samples": 30,
+        "max_depth": 10,
+        "learning_rate": 0.01,
+        "colsample_bytree": 1.0,
+        "class_weight": "balanced"
+    },
+    "auc": 0.634562886732462,
+    "train_rows": 86775,
+    "val_rows": 119043,
+    "num_features": 55,
+    "class_distribution": {
+        "0": 69420,
+        "1": 17355
+    },
+    "train_time": 567.53347
+}

@@ -1,0 +1,100 @@
+Preparation:
+minikube start --driver docker
+minikube status
+minikube ssh # enter cluster's vm with ssh
+minikube dashboard # show browser UI
+minikube kubectl -- get nodes
+
+    Optionally:
+    kubectl create namespace mlops
+    kubectl config set-context --current --namespace=mlops
+
+Cleanup:
+minikube kubectl -- delete pods --all
+minikube kubectl -- delete jobs --all
+minikube kubectl -- delete services --all
+minikube kubectl -- delete pvc --all
+better just:
+minikube stop
+minikube delete --all --purge
+
+Bind mount files to VM:
+minikube mount ~/Munka/MLOPS/mlops_porto/data:/data
+
+Start them:
+minikube kubectl -- apply -f k8s/pvc.yml
+minikube kubectl -- apply -f k8s/trainer-job.yml
+minikube kubectl -- apply -f k8s/inference-deployment.yml
+minikube kubectl -- apply -f k8s/inference-service.yml
+minikube kubectl -- apply -f k8s/prometheus-config.yml
+minikube kubectl -- apply -f k8s/prometheus-deployment.yml
+minikube kubectl -- apply -f k8s/prometheus-service.yml
+
+Delete them:
+minikube kubectl -- delete -f ...
+
+Get stuff:
+minikube kubectl -- get pods
+minikube kubectl -- get jobs
+minikube kubectl -- get svc
+minikube kubectl -- get pvc
+
+Logs:
+minikube kubectl -- logs job/ml-trainer-job
+minikube service inference-service
+
+Interact with pod:
+minikube kubectl -- exec -it pod_name -- command_inside
+
+Open prometheus service in browser:
+minikube service prometheus-service
+
+
+Service start order:
+1. PersistantVolumeClaim
+    minikube kubectl apply -f k8s/pvc.yml
+    minikube kubectl get pvc
+
+2. Trainer job
+    minikube kubectl apply -f k8s/trainer-job.yml
+    minikube kubectl get jobs
+    minikube kubectl logs job/ml-trainer-job
+
+3. Inference deployment
+    minikube kubectl apply -f k8s/inference-deployment.yaml
+    minikube kubectl get pods
+    minikube kubectl logs deployment/inference-deployment
+
+4. Inference service
+    minikube kubectl apply -f k8s/inference-service.yaml
+    minikube kubectl get svc
+    
+    # minikube can be reached at:
+    minikube service inference-service
+    # or:
+    http://localhost:30080/health
+    http://localhost:30080/predict
+    http://inference-service:8000/metrics
+
+5. Prometheus
+    minikube kubectl apply -f prometheus-config.yml
+    minikube kubectl apply -f prometheus-service.yml
+
+    minikube service prometheus-service --url
+    # or:
+    http://localhost:30090
+
+6. If the image has changed:
+    Rebuild:
+    docker build -t myrepo/inference:v2 .
+    docker push myrepo/inference:v2
+
+    In Kubernetes:
+    kubectl set image deployment inference-deployment inference=myrepo/inference:v2
+    or rewrite it in the yml.
+    Then:
+    kubectl rollout status deployment inference-deployment
+
+    If the content has changed in yml (e.g. volume):
+    kubectl apply -f inference-deployment.yml
+
