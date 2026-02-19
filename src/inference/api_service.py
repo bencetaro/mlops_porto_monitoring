@@ -4,10 +4,9 @@ import joblib
 import pandas as pd
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
-from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
-from prometheus_client import Counter, Histogram, generate_latest
+from prometheus_client import Counter, Histogram, make_asgi_app
 
 from src.inference.schemas import PredictionResponse, Item, BatchRequest
 from src.inference.helpers import inference_preprocessing
@@ -15,10 +14,41 @@ from src.inference.helpers import inference_preprocessing
 MODEL_PATH = os.getenv("MODEL_PATH", "/output/model.pkl")
 PREP_PATH = os.getenv("PREP_PATH", "/data/processed/preprocessors.pkl")
 app = FastAPI()
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
-REQUEST_COUNTER = Counter("inference_requests_total", "Total inference requests")
-ERROR_COUNTER = Counter("inference_errors_total", "Total inference errors")
-INFERENCE_TIME = Histogram("inference_duration_seconds", "Inference latency")
+REQUEST_COUNTER = Counter(
+    "inference_requests_total",
+    "Total number of inference requests",
+    ["endpoint", "model_name", "status"]
+)
+
+ERROR_COUNTER = Counter(
+    "inference_errors_total",
+    "Total number of errors",
+    ["endpoint", "model_name"]
+)
+
+PAGE_VIEWS = Counter(
+    "page_views_total",
+    "Total page hits",
+    ["endpoint"]
+)
+
+INFERENCE_TIME = Histogram(
+    "inference_latency_seconds",
+    "Inference latency in seconds",
+    ["endpoint", "model_name"]
+)
+
+PREDICTION_VALUE = Histogram(
+    "inference_prediction_value",
+    "Distribution of predicted values",
+    ["endpoint", "model_name"],
+    buckets=[i/20 for i in range(21)]
+)
+
+BATCH_SIZE = Histogram("batch_size", "Batch sizes")
 
 MODEL_CACHE = {}
 CACHE_LIMIT = 5
@@ -61,41 +91,63 @@ def list_models():
 
 @app.get("/health")
 def health():
+    PAGE_VIEWS.labels("/health").inc()
     return {"status": "ok"}
-
-@app.get("/metrics", response_class=PlainTextResponse)
-def metrics():
-    return generate_latest().decode("utf-8")
 
 @app.post("/predict", response_model=PredictionResponse)
 def predict(item: Item, model_name: str = Query("default")):
     model = get_default_model() if model_name == "default" else load_model(model_name)
+    start = time.time()
+    try:
+        df = pd.DataFrame([item.root])
+        X = inference_preprocessing(df, PREP_PATH)
+        if hasattr(model, "predict_proba"):
+            pred = model.predict_proba(X)[0][1]
+        else:
+            pred = model.predict(X)[0]
 
-    df = pd.DataFrame([item.root])
-    X = inference_preprocessing(df, PREP_PATH)
+        REQUEST_COUNTER.labels(endpoint="/predict", model_name=model_name, status="ok").inc()
+        PREDICTION_VALUE.labels(endpoint="/predict", model_name=model_name).observe(pred)
+        return {"prediction": float(pred)}
 
-    if hasattr(model, "predict_proba"):
-        pred = model.predict_proba(X)[0][1]
-    else:
-        pred = model.predict(X)[0]
+    except Exception as e:
+        REQUEST_COUNTER.labels(endpoint="/predict", model_name=model_name, status="error").inc()
+        ERROR_COUNTER.labels(endpoint="/predict", model_name=model_name).inc()
+        raise
 
-    return {"prediction": float(pred)}
+    finally:
+        INFERENCE_TIME.labels(endpoint="/predict", model_name=model_name).observe(time.time() - start)
 
 @app.post("/predict/batch", response_model=List[PredictionResponse])
 def predict_batch(items: BatchRequest, model_name: str = Query("default")):
     model = get_default_model() if model_name == "default" else load_model(model_name)
+    start = time.time()
+    try:
+        df = pd.DataFrame(items.root)
+        X = inference_preprocessing(df, PREP_PATH)
 
-    df = pd.DataFrame(items.root)
-    X = inference_preprocessing(df, PREP_PATH)
+        if hasattr(model, "feature_names_in_"):
+            X = X[model.feature_names_in_]
+        else:
+            X = X[model.booster_.feature_name()]
 
-    if hasattr(model, "feature_names_in_"):
-        X = X[model.feature_names_in_]
-    else:
-        X = X[model.booster_.feature_name()]
+        if hasattr(model, "predict_proba"):
+            preds = model.predict_proba(X)[:, 1]
+        else:
+            preds = model.predict(X)
 
-    if hasattr(model, "predict_proba"):
-        preds = model.predict_proba(X)[:, 1]
-    else:
-        preds = model.predict(X)
+        REQUEST_COUNTER.labels(endpoint="/predict/batch", model_name=model_name, status="ok").inc()
+        BATCH_SIZE.observe(len(items.root))
 
-    return [{"prediction": float(p)} for p in preds]
+        for p in preds:
+            PREDICTION_VALUE.labels(endpoint="/predict/batch", model_name=model_name).observe(p)
+
+        return [{"prediction": float(p)} for p in preds]
+
+    except Exception as e:
+        REQUEST_COUNTER.labels(endpoint="/predict/batch", model_name=model_name, status="error").inc()
+        ERROR_COUNTER.labels(endpoint="/predict/batch", model_name=model_name).inc()
+        raise
+
+    finally: # (batch latency)
+        INFERENCE_TIME.labels(endpoint="/predict/batch", model_name=model_name).observe(time.time() - start)

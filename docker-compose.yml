@@ -5,6 +5,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.train
     command: [ "bash", "docker/run_train_pipeline.sh" ]
+    ports:
+      - "8001:8001"
     volumes:
       - ./data:/data
       - ./output:/output
@@ -51,7 +53,9 @@ services:
     image: grafana/grafana:latest
     container_name: grafana
     volumes:
-      - ./monitoring/grafana:/etc/grafana
+      - ./monitoring/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml
+      - ./monitoring/grafana/provider.yml:/etc/grafana/provisioning/dashboards/provider.yml
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
     ports:
       - "3000:3000"
     environment:
@@ -59,3 +63,10 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     depends_on:
       - prometheus
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    restart: unless-stopped
