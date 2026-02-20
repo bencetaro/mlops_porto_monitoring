@@ -64,13 +64,13 @@ The goal is to simulate a realistic ML production environment with observability
 
 The application consists of three main pages:
 
-- **Inference Page**
+- **Inference Page:**
   Supports both single prediction and batch prediction workflows.
 
-- **Training Page**
+- **Training Page:**
   Displays training statistics, performance metrics, and model insights.
 
-- **Model Comparison Page**
+- **Model Comparison Page:**
   Provides a structured tabular comparison between available models.
 
 ### Backend Architecture
