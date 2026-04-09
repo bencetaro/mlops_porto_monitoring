@@ -123,3 +123,13 @@ Collected by Node Exporter:
 ![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring/blob/master/images/grafana_1.png)
 ![Dashboard](https://github.com/bencetaro/mlops_porto_monitoring/blob/master/images/grafana_2.png)
 
+---
+
+## Data Source
+
+- Dataset: Porto Seguro’s Safe Driver Prediction
+- Source: Kaggle
+- Link: https://kaggle.com/competitions/porto-seguro-safe-driver-prediction
+
+
+The dataset is used for educational and portfolio purposes only.
